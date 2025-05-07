@@ -25,53 +25,43 @@ const { Option } = Select;
 const { confirm } = Modal;
 
 const DomainsTable = () => {
-  // Fetch data and mutations from RTK Query
   const { data: domains = [], isLoading } = useGetDomainsQuery();
   const [deleteDomain] = useDeleteDomainMutation();
   const [updateDomain] = useUpdateDomainMutation();
 
-  // UI state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [sortOrder, setSortOrder] = useState("desc");
 
-  // Drawer handlers
   const showDrawer = () => setIsDrawerOpen(true);
   const closeDrawer = () => setIsDrawerOpen(false);
 
-  // Action handlers
-  const handleDelete = (record) => {
+  const handleDelete = async (record) => {
     confirm({
       title: "Are you sure you want to delete this domain?",
       icon: <ExclamationCircleOutlined />,
       content: record.domain,
-      onOk() {
-        return deleteDomain(record.id)
-          .unwrap()
-          .then(() => {
-            message.success("Domain deleted successfully");
-          })
-          .catch(() => {
-            message.error("Failed to delete domain");
-          });
+      async onOk() {
+        try {
+          await deleteDomain(record.id).unwrap();
+          message.success("Domain deleted successfully");
+        } catch (error) {
+          message.error(error.message || "Failed to delete domain");
+        }
       },
     });
   };
 
-  const handleVerify = (record) => {
-    updateDomain({
-      id: record.id,
-      domain: record.domain,
-      isActive: record.isActive,
-      status: "verified",
-    })
-      .unwrap()
-      .then(() => {
-        message.success("Domain verified successfully");
-      })
-      .catch(() => {
-        message.error("Failed to verify domain");
-      });
+  const handleVerify = async (record) => {
+    try {
+      await updateDomain({
+        id: record.id,
+        status: "verified",
+      }).unwrap();
+      message.success("Domain verified successfully");
+    } catch (error) {
+      message.error(error.message || "Failed to verify domain");
+    }
   };
 
   const handleViewPages = (record) => {
@@ -82,7 +72,6 @@ const DomainsTable = () => {
     console.log("Installing script for:", record.domain);
   };
 
-  // Filter and sort domains
   const filteredDomains = useMemo(() => {
     const filtered = domains.filter((d) =>
       d.domain.toLowerCase().includes(searchText.toLowerCase())
@@ -94,7 +83,6 @@ const DomainsTable = () => {
     });
   }, [domains, searchText, sortOrder]);
 
-  // Table columns
   const columns = [
     {
       title: "Domain URL",
@@ -169,7 +157,10 @@ const DomainsTable = () => {
         };
 
         return (
-          <Dropdown menu={{ items, onClick: handleMenuClick }} trigger={["click"]}>
+          <Dropdown
+            menu={{ items, onClick: handleMenuClick }}
+            trigger={["click"]}
+          >
             <Button type="text" icon={<MoreOutlined />} />
           </Dropdown>
         );

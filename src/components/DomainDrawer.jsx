@@ -1,16 +1,31 @@
-//
 import React from "react";
-import { Drawer, Form, Input, Select, Switch, Button, Space } from "antd";
+import {
+  Drawer,
+  Form,
+  Input,
+  Select,
+  Switch,
+  Button,
+  Space,
+  message,
+} from "antd";
+import { useAddDomainMutation } from "../redux/domainApi";
 
 const { Option } = Select;
 
 const DomainDrawer = ({ open, onClose }) => {
   const [form] = Form.useForm();
+  const [addDomain, { isLoading }] = useAddDomainMutation();
 
-  const handleFinish = (values) => {
-    console.log("Form submitted:", values);
-    form.resetFields();
-    onClose();
+  const handleFinish = async (values) => {
+    try {
+      await addDomain(values).unwrap();
+      message.success("Domain added successfully");
+      form.resetFields();
+      onClose();
+    } catch (error) {
+      message.error(error.data?.message || "Failed to add domain");
+    }
   };
 
   const handleCancel = () => {
@@ -30,7 +45,11 @@ const DomainDrawer = ({ open, onClose }) => {
         <div className="text-right">
           <Space>
             <Button onClick={handleCancel}>Cancel</Button>
-            <Button type="primary" onClick={() => form.submit()}>
+            <Button
+              type="primary"
+              onClick={() => form.submit()}
+              loading={isLoading}
+            >
               Add Domain
             </Button>
           </Space>
